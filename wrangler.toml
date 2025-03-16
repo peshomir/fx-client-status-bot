@@ -1,0 +1,10 @@
+name = "fx-status"
+main = "src/worker.js"
+compatibility_date = "2025-03-09"
+workers_dev = true
+preview_urls = false
+
+[vars]
+notificationChannel = "1279402048541954048"
+statusChannel = "1278643839254663220"
+statusMessage = "1349033122230046842"
