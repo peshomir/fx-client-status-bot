@@ -4,10 +4,10 @@ const ORANGE = 0xf4900c;
 /** @param {string?} code */
 function tryParseVersion(code) {
 	if (code === null) return null;
-  code = code.replace(/\n/g, "");
-  const expressionForOriginalCode = /\{this\.\w+=(\d+);this\.\w+=([1-9]\d+);this\.\w+=\d+;this\.\w+=function\(\)\{/g;
+  code = code.replace(/\r?\n|\r/g, "");
+  const expressionForOriginalCode = /\{this\.\w+=(\d+);this\.\w+=([1-9]\d+);this\.\w+=\d+;this\.\w+=\d+;this\.\w+=function\(\)\{/g;
   //const expressionForMinifiedCode = /\{this\.\w+=(\d+),this\.\w+=([1-9]\d+),this\.\w+=\d+,this\.\w+=function\(\)\{/g
-  const expressionForFXCode = /\tthis\.\w+ = (\d+), this\.\w+ = ([1-9]\d+), this\.\w+ = \d+, this\.\w+ = function\(\) \{/g
+  const expressionForFXCode = /\tthis\.\w+ = (\d+), this\.\w+ = ([1-9]\d+), this\.\w+ = \d+, this\.\w+ = \d+, this\.\w+ = function\(\) \{/g
   const result = expressionForOriginalCode.exec(code) ?? expressionForFXCode.exec(code);
   if (result === null) return null;
   const [ _match, protocolVersion, gameVersion ] = result;
@@ -21,8 +21,16 @@ function formatVersion(version) {
 	const [ a, b, c, d ] = str;
 	return `${a}.${b}${c}.${d}`;
 }
-function tryFetchTextContent(/** @type {string} */ url) {
-	return fetch(url).then((response) => response.text()).catch((e) => null)
+async function tryFetchTextContent(/** @type {string} */ url) {
+	try {
+		const response = await fetch(url);
+		if (response.ok) return await response.text();
+		console.log("Fetch failed: ", url, response.status, response.statusText);
+		return null;
+	} catch (e) {
+		console.log("Fetch error: ", url, e);
+		return null;
+	}
 }
 
 export default {
@@ -122,7 +130,7 @@ export default {
 					: `\n-# New version: ${formatVersion(vanillaVersion?.game)} | FX version: ${formatVersion(fxVersion?.game)}`
 				),
 				"Custom lobby server": (
-					!customLobbyProtocolVersion ? "⭕ Offline" :
+					!customLobbyProtocolVersion ? "⭕ Offline / Unknown status" :
 					customLobbyProtocolVersion === vanillaVersion?.protocol ? "✅ Up to date" :
 					customLobbyProtocolVersion === fxVersion?.protocol ? "✅ Up to date with FX Client" :
 					"🟩 Online\n-# Compatibility with latest version not verified"
