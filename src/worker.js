@@ -1,3 +1,5 @@
+import { triggerWorkflowUnlessFailed } from "./github-actions-api";
+
 const GREEN = 0x78b159;
 const ORANGE = 0xf4900c;
 
@@ -119,6 +121,12 @@ export default {
 				await sendNotification(`${emoji}/${customLobbyEmoji} Version changed: ${newInfoString}`);
 				await storage.put('versionInfo', newInfoString);
 			}
+			if (!parsingFailed && !gameVersionsMatch) await triggerWorkflowUnlessFailed({
+				owner: "fxclient",
+				repo: "FXclient",
+				token: env.githubActionsToken,
+				workflowId: "deploy_github_pages.yml"
+			})
 
 			const status = {
 				"Client": parsingFailed ? "⭕ Unknown (Failed to parse version)" : (
