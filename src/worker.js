@@ -121,12 +121,17 @@ export default {
 				await sendNotification(`${emoji}/${customLobbyEmoji} Version changed: ${newInfoString}`);
 				await storage.put('versionInfo', newInfoString);
 			}
-			if (!parsingFailed && !gameVersionsMatch) await triggerWorkflowUnlessFailed({
-				owner: "fxclient",
-				repo: "FXclient",
-				token: env.githubActionsToken,
-				workflowId: "deploy_github_pages.yml"
-			})
+			if (!parsingFailed && !gameVersionsMatch) {
+				const {triggered} = await triggerWorkflowUnlessFailed({
+					owner: "fxclient",
+					repo: "FXclient",
+					token: env.githubActionsToken,
+					workflowId: "deploy_github_pages.yml"
+				})
+				if (!triggered && (await storage.get("needsManualUpdate")) === "false")
+					await sendNotification(`<@&1055887031949070476> Workflow run failed`)
+				await storage.put("needsManualUpdate", JSON.stringify(!triggered))
+			}
 
 			const status = {
 				"Client": parsingFailed ? "⭕ Unknown (Failed to parse version)" : (
