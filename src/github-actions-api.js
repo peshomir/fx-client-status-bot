@@ -15,43 +15,38 @@ export async function triggerWorkflowUnlessFailed({
   workflowId,
   ref = "main",
 }) {
-  const baseUrl = "https://api.github.com";
+  const baseUrl = "https://api.github.com"
   const headers = {
-    "Authorization": `Bearer ${token}`,
-    "Accept": "application/vnd.github+json",
+    Authorization: `Bearer ${token}`,
+    Accept: "application/vnd.github+json",
     "X-GitHub-Api-Version": "2022-11-28",
     "User-Agent": "fx-status-checker",
-  };
+  }
   // 1. Fetch the most recent workflow run
   const runsRes = await fetch(
     `${baseUrl}/repos/${owner}/${repo}/actions/workflows/${workflowId}/runs?per_page=1`,
     { headers }
-  );
+  )
 
-  if (!runsRes.ok) {
-    throw new Error(`Failed to fetch workflow runs: ${runsRes.status}`);
-  }
+  if (!runsRes.ok) throw new Error(`Failed to fetch workflow runs: ${runsRes.status}`)
 
-  const runsData = await runsRes.json();
-  const latestRun = runsData.workflow_runs?.[0];
+  const runsData = await runsRes.json()
+  const latestRun = runsData.workflow_runs?.[0]
 
   if (latestRun) {
-    const { status, conclusion } = latestRun;
-
+    const { status, conclusion } = latestRun
     console.log("Latest run:", {
       status,
       conclusion,
       html_url: latestRun.html_url,
-    });
+    })
 
     // 2. Do not trigger if the most recent run failed
     if (conclusion !== "success") {
-      console.log("Latest workflow run failed — not triggering.");
-      return { triggered: false, reason: "latest_run_failed" };
+      console.log("Latest workflow run failed — not triggering.")
+      return { triggered: false, reason: "latest_run_failed" }
     }
-  } else {
-    console.log("No previous workflow runs found.");
-  }
+  } else console.log("No previous workflow runs found.")
 
   // 3. Trigger the workflow
   const dispatchRes = await fetch(
@@ -61,12 +56,9 @@ export async function triggerWorkflowUnlessFailed({
       headers,
       body: JSON.stringify({ ref }),
     }
-  );
+  )
+  if (!dispatchRes.ok) throw new Error(`Failed to trigger workflow: ${dispatchRes.status}`)
 
-  if (!dispatchRes.ok) {
-    throw new Error(`Failed to trigger workflow: ${dispatchRes.status}`);
-  }
-
-  console.log("Workflow triggered successfully.");
-  return { triggered: true };
+  console.log("Workflow triggered successfully.")
+  return { triggered: true }
 }
