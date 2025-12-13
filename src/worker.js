@@ -108,17 +108,17 @@ export default {
 				storedVersionInfo = null;
 			}
 
-			const newInfoString = JSON.stringify(newVersionInfo);
-			if (!storedVersionInfo || JSON.stringify(storedVersionInfo) !== newInfoString) {
-				await sendNotification(`Version changed:
-	Old: ${storedVersionInfoStr || "none"}
-	New: ${newInfoString}`);
-				await storage.put('versionInfo', newInfoString);
-			}
-
 			const parsingFailed = !vanillaVersion || !fxVersion;
 			const gameVersionsMatch = !parsingFailed && vanillaVersion?.game === fxVersion?.game;
 			const protocolVersionsMatch = !parsingFailed && vanillaVersion?.protocol === fxVersion?.protocol;
+			
+			const newInfoString = JSON.stringify(newVersionInfo);
+			if (!storedVersionInfo || JSON.stringify(storedVersionInfo) !== newInfoString) {
+				const emoji = parsingFailed ? "⭕" : gameVersionsMatch ? "🟢" : protocolVersionsMatch ? "🟡" : "🟠"
+				const customLobbyEmoji = !customLobbyProtocolVersion ? "🟥" : "🟩"
+				await sendNotification(`${emoji}/${customLobbyEmoji} Version changed: ${newInfoString}`);
+				await storage.put('versionInfo', newInfoString);
+			}
 
 			const status = {
 				"Client": parsingFailed ? "⭕ Unknown (Failed to parse version)" : (
