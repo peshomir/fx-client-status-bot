@@ -42,7 +42,7 @@ export default {
     return new Response("ok")
   },
   async scheduled(event, env, ctx) {
-    const { statusChannel, statusMessage, notificationChannel, customLobbyURL, token } = env
+    const { statusChannel, statusMessage, notificationChannel, token } = env
     const storage = env.KV_STATUS
 
     /**
@@ -99,7 +99,11 @@ export default {
       const fxVersion = tryParseVersion(
         await tryFetchTextContent("https://fxclient.github.io/FXclient/game.js")
       )
-      const customLobbyProtocolVersion = await tryFetchTextContent(customLobbyURL + "/version")
+      try {
+        var customLobbyProtocolVersion = await env.CUSTOM_LOBBIES.getProtocolVersionAndVerifyStatus()
+      } catch (error) {
+        var customLobbyProtocolVersion = null
+      }
 
       const newVersionInfo = {
         vanilla: vanillaVersion,
@@ -159,7 +163,7 @@ export default {
                   vanillaVersion?.game
                 )} | FX version: ${formatVersion(fxVersion?.game)}`),
         "Custom lobby server": !customLobbyProtocolVersion
-          ? "⭕ Offline / Unknown status"
+          ? "⭕ Offline / Unknown status (possibly went over the free tier limits)"
           : customLobbyProtocolVersion === vanillaVersion?.protocol
           ? "✅ Up to date"
           : customLobbyProtocolVersion === fxVersion?.protocol
