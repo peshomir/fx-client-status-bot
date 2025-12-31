@@ -100,8 +100,9 @@ export default {
         await tryFetchTextContent("https://fxclient.github.io/FXclient/game.js")
       )
       try {
-        var customLobbyProtocolVersion = await env.CUSTOM_LOBBIES.getProtocolVersionAndVerifyStatus()
+        var customLobbyProtocolVersion = (await env.CUSTOM_LOBBIES.getProtocolVersionAndVerifyStatus(undefined)).toString()
       } catch (error) {
+        console.log(error)
         var customLobbyProtocolVersion = null
       }
 
