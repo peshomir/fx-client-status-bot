@@ -8,9 +8,9 @@ function tryParseVersion(code) {
   if (code === null) return null
   code = code.replace(/\r?\n|\r/g, "")
   const expressionForOriginalCode =
-    /\{this\.\w+=(\d+);var \w+=([1-9]\d*);var \w+=([1-9]\d*);var \w+=([1-9]\d*);this\.\w+=\d+;this\.\w+=\d+;this\.\w+=function\(\)\{/g
+    /\{this\.\w+=(\d+);var \w+=(\d+);var \w+=(\d+);var \w+=(\d+);this\.\w+=\d+;this\.\w+=\d+;this\.\w+=function\(\)\{/g
   const expressionForFXCode =
-    /\{\tthis\.\w+ = (\d+);[\s\S]+?this\.\w+ = "([1-9]\d*)\.([1-9]\d*)\.([1-9]\d*)", this.(\w+) =/g
+    /\{\tthis\.\w+ = (\d+);[\s\S]+?this\.\w+ = "(\d+)\.(\d+)\.(\d+)", this.(\w+) =/g
   const result = expressionForOriginalCode.exec(code) ?? expressionForFXCode.exec(code)
   if (result === null) return null
   const [_match, protocolVersion, majorGameVersion, minorGameVersion, patchGameVersion] = result
