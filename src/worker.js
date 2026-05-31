@@ -1,8 +1,5 @@
 import { triggerWorkflowUnlessFailed } from "./github-actions-api"
 
-const GREEN = 0x78b159
-const ORANGE = 0xf4900c
-
 /** @param {string?} code */
 function tryParseVersion(code) {
   if (code === null) return null
@@ -60,7 +57,6 @@ export default {
       })
       const response = await requestResponse.json()
       if (response.errors !== undefined) throw new Error(response)
-      //console.log(response);
       return response
     }
 
@@ -97,10 +93,12 @@ export default {
     try {
       const vanillaVersion = tryParseVersion(await tryFetchTextContent("https://territorial.io"))
       const fxVersion = tryParseVersion(
-        await tryFetchTextContent("https://fxclient.github.io/FXclient/game.js")
+        await tryFetchTextContent("https://fxclient.github.io/FXclient/game.js"),
       )
       try {
-        var customLobbyProtocolVersion = (await env.CUSTOM_LOBBIES.getProtocolVersionAndVerifyStatus(undefined)).toString()
+        var customLobbyProtocolVersion = (
+          await env.CUSTOM_LOBBIES.getProtocolVersionAndVerifyStatus(undefined)
+        ).toString()
       } catch (error) {
         console.log(error)
         var customLobbyProtocolVersion = null
@@ -130,10 +128,10 @@ export default {
         const emoji = parsingFailed
           ? "⭕"
           : gameVersionsMatch
-          ? "🟢"
-          : protocolVersionsMatch
-          ? "🟡"
-          : "🟠"
+            ? "🟢"
+            : protocolVersionsMatch
+              ? "🟡"
+              : "🟠"
         const customLobbyEmoji = !customLobbyProtocolVersion ? "🟥" : "🟩"
         await sendNotification(`${emoji}/${customLobbyEmoji} Version changed: ${newInfoString}`)
         await storage.put("versionInfo", newInfoString)
@@ -156,21 +154,24 @@ export default {
           : (gameVersionsMatch && protocolVersionsMatch
               ? "🟢 Up to date"
               : protocolVersionsMatch
-              ? "🟡 Outdated, usable for multiplayer"
-              : "🟠 Outdated") +
+                ? "🟡 Outdated, usable for multiplayer"
+                : "🟠 Outdated") +
             (gameVersionsMatch
               ? `\n-# Version: ${formatVersion(fxVersion.game)}`
               : `\n-# New version: ${formatVersion(
-                  vanillaVersion?.game
+                  vanillaVersion?.game,
                 )} | FX version: ${formatVersion(fxVersion?.game)}`),
         "Custom lobby server": !customLobbyProtocolVersion
           ? "⭕ Offline / Unknown status (possibly went over the free tier limits)"
           : customLobbyProtocolVersion === vanillaVersion?.protocol
-          ? "✅ Up to date"
-          : customLobbyProtocolVersion === fxVersion?.protocol
-          ? "✅ Up to date with FX Client"
-          : "🟩 Online\n-# Compatibility with latest version not verified",
+            ? "✅ Up to date"
+            : customLobbyProtocolVersion === fxVersion?.protocol
+              ? "✅ Up to date with FX Client"
+              : "🟩 Online\n-# Compatibility with latest version not verified",
       }
+
+      const GREEN = 0x78b159
+      const ORANGE = 0xf4900c
 
       await updateStatus(status, gameVersionsMatch ? GREEN : ORANGE)
     } catch (e) {
