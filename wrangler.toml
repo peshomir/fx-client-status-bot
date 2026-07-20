@@ -18,3 +18,6 @@ crons = ["*/30 * * * *"]
 notificationChannel = "1279402048541954048"
 statusChannel = "1278643839254663220"
 statusMessage = "1349033122230046842"
+
+[observability]
+enabled = true

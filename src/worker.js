@@ -4,6 +4,7 @@ import { triggerWorkflowUnlessFailed } from "./github-actions-api"
 function tryParseVersion(code) {
   if (code === null) return null
   code = code.replace(/\r?\n|\r/g, "")
+  console.debug("Code start: ", code.slice(0, 100), "\nCode end: ", code.slice(-100))
   const expressionForOriginalCode =
     /\{this\.\w+=(\d+);var \w+=(\d+);var \w+=(\d+);var \w+=(\d+);this\.\w+=\d+;this\.\w+=\d+;this\.\w+=function\(\)\{/g
   const expressionForFXCode =
