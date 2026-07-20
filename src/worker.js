@@ -96,6 +96,7 @@ export default {
       const fxVersion = tryParseVersion(
         await tryFetchTextContent("https://fxclient.github.io/FXclient/game.js"),
       )
+      const isLocalDevEnv = env.isDevEnv === "true"
       try {
         var customLobbyProtocolVersion = (
           await env.CUSTOM_LOBBIES.getProtocolVersionAndVerifyStatus(undefined)
@@ -133,7 +134,7 @@ export default {
             : protocolVersionsMatch
               ? "🟡"
               : "🟠"
-        const customLobbyEmoji = !customLobbyProtocolVersion ? "🟥" : "🟩"
+        const customLobbyEmoji = !customLobbyProtocolVersion ? (isLocalDevEnv ? "🔳" : "🟥") : "🟩"
         await sendNotification(`${emoji}/${customLobbyEmoji} Version changed: ${newInfoString}`)
         await storage.put("versionInfo", newInfoString)
       }
@@ -163,7 +164,9 @@ export default {
                   vanillaVersion?.game,
                 )} | FX version: ${formatVersion(fxVersion?.game)}`),
         "Custom lobby server": !customLobbyProtocolVersion
-          ? "⭕ Offline / Unknown status (possibly went over the free tier limits)"
+          ? isLocalDevEnv
+            ? "🔳 Not applicable\n-# (status checker executed in a local development environment used for testing)"
+            : "⭕ Offline / Unknown status (possibly went over the free tier limits)"
           : customLobbyProtocolVersion === vanillaVersion?.protocol
             ? "✅ Up to date"
             : customLobbyProtocolVersion === fxVersion?.protocol
