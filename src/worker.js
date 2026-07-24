@@ -92,7 +92,9 @@ export default {
     }
 
     try {
-      const vanillaVersion = tryParseVersion(await tryFetchTextContent("https://territorial.io"))
+      const vanillaVersion = tryParseVersion(
+        await tryFetchTextContent(env.territorialURL ?? "https://territorial.io"),
+      )
       const fxVersion = tryParseVersion(
         await tryFetchTextContent("https://fxclient.github.io/FXclient/game.js"),
       )
