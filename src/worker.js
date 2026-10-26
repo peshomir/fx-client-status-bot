@@ -5,15 +5,24 @@ function tryParseVersion(code) {
   if (code === null) return null
   code = code.replace(/\r?\n|\r/g, "")
   console.debug("Code start: ", code.slice(0, 100), "\nCode end: ", code.slice(-100))
-  const expressionForOriginalCode =
-    /\{this\.\w+=(\d+);var \w+=(\d+);var \w+=(\d+);var \w+=(\d+);this\.\w+=\d+;this\.\w+=\d+;this\.\w+=function\(\)\{/g
-  const expressionForFXCode =
-    /\(\) \{\tthis\.\w+ = (\d+);[\s\S]{1,160}this\.\w+ = "(\d+)\.(\d+)\.(\d+)", this.(\w+) =/g
-  const result = expressionForOriginalCode.exec(code) ?? expressionForFXCode.exec(code)
-  if (result === null) return null
-  const [_match, protocolVersion, majorGameVersion, minorGameVersion, patchGameVersion] = result
-  const gameVersion = parseInt([majorGameVersion, minorGameVersion, patchGameVersion].join(""))
-  return { protocol: protocolVersion, game: gameVersion }
+
+  const patterns = [
+    // vanilla
+    /\{this\.\w+=\d+;this\.\w+=(\d+);this\.\w+=\d+;var \w+=(\d+);var \w+=(\d+);var \w+=(\d+);this\.\w+=\d+;this\.\w+=function\(\)\{/,
+    // fx
+    /\(\) \{\tthis\.\w+ = \d+, this\.\w+ = (\d+)[\s\S]{1,160}this\.\w+ = "(\d+)\.(\d+)\.(\d+)", this.(\w+) =/,
+  ]
+
+  for (const re of patterns) {
+    const match = re.exec(code)
+    if (!match) continue
+    const [, protocolVersion, major, minor, patch] = match
+    // console.log({protocolVersion, major, minor, patch})
+    const gameVersion = Number(`${major}${minor}${patch}`)
+    return { protocol: protocolVersion, game: gameVersion }
+  }
+
+  return null
 }
 /** @param {number} [version]  */
 function formatVersion(version) {
