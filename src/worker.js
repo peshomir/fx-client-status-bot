@@ -1,37 +1,6 @@
 import { triggerWorkflowUnlessFailed } from "./github-actions-api"
+import ModUtils, { minifyCode, tryParseGameVersion } from "../FXclient/modUtils.js"
 
-/** @param {string?} code */
-function tryParseVersion(code) {
-  if (code === null) return null
-  code = code.replace(/\r?\n|\r/g, "")
-  console.debug("Code start: ", code.slice(0, 100), "\nCode end: ", code.slice(-100))
-
-  const patterns = [
-    // vanilla
-    /\{this\.\w+=\d+;this\.\w+=(\d+);this\.\w+=\d+;var \w+=(\d+);var \w+=(\d+);var \w+=(\d+);this\.\w+=\d+;this\.\w+=function\(\)\{/,
-    // fx
-    /\(\) \{\tthis\.\w+ = \d+, this\.\w+ = (\d+)[\s\S]{1,160}this\.\w+ = "(\d+)\.(\d+)\.(\d+)", this.(\w+) =/,
-  ]
-
-  for (const re of patterns) {
-    const match = re.exec(code)
-    if (!match) continue
-    const [, protocolVersion, major, minor, patch] = match
-    // console.log({protocolVersion, major, minor, patch})
-    const gameVersion = Number(`${major}${minor}${patch}`)
-    return { protocol: protocolVersion, game: gameVersion }
-  }
-
-  return null
-}
-/** @param {number} [version]  */
-function formatVersion(version) {
-  if (version === undefined) return "Unknown"
-  const str = version.toString()
-  if (str.length !== 4) return str
-  const [a, b, c, d] = str
-  return `${a}.${b}${c}.${d}`
-}
 async function tryFetchTextContent(/** @type {string} */ url) {
   try {
     const response = await fetch(url)
@@ -42,6 +11,36 @@ async function tryFetchTextContent(/** @type {string} */ url) {
     console.log("Fetch error: ", url, e)
     return null
   }
+}
+
+/**
+ * Reads the version out of the game script embedded in Territorial.io's HTML.
+ * @param {string?} html
+ * @returns {{ game: string, protocol: string } | null}
+ */
+export function parseVanillaVersion(html) {
+  if (!html) return null
+  for (const [, script] of html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)) {
+    try {
+      const version = tryParseGameVersion(new ModUtils(minifyCode(script)))
+      if (version) return version
+    } catch (e) {
+      console.debug("Skipping script that failed to parse:", e)
+    }
+  }
+  return null
+}
+
+/**
+ * Parses FX Client's version.txt, formatted as `<game> <protocol>` (e.g. "2.17.7 1772").
+ * @param {string?} text
+ * @returns {{ game: string, protocol: string } | null}
+ */
+export function parseVersionFile(text) {
+  if (!text) return null
+  const [game, protocol] = text.trim().split(/\s+/)
+  if (!game || !protocol || game === "unknown") return null
+  return { game, protocol }
 }
 
 export default {
@@ -101,11 +100,11 @@ export default {
     }
 
     try {
-      const vanillaVersion = tryParseVersion(
+      const vanillaVersion = parseVanillaVersion(
         await tryFetchTextContent(env.territorialURL ?? "https://territorial.io"),
       )
-      const fxVersion = tryParseVersion(
-        await tryFetchTextContent("https://fxclient.github.io/FXclient/game.js"),
+      const fxVersion = parseVersionFile(
+        await tryFetchTextContent("https://fxclient.github.io/FXclient/version.txt"),
       )
       const isLocalDevEnv = env.isDevEnv === "true"
       try {
@@ -170,10 +169,8 @@ export default {
                 ? "🟡 Outdated, usable for multiplayer"
                 : "🟠 Outdated") +
             (gameVersionsMatch
-              ? `\n-# Version: ${formatVersion(fxVersion.game)}`
-              : `\n-# New version: ${formatVersion(
-                  vanillaVersion?.game,
-                )} | FX version: ${formatVersion(fxVersion?.game)}`),
+              ? `\n-# Version: ${fxVersion.game}`
+              : `\n-# New version: ${vanillaVersion?.game} | FX version: ${fxVersion?.game}`),
         "Custom lobby server": !customLobbyProtocolVersion
           ? isLocalDevEnv
             ? "🔳 Not applicable\n-# (status checker executed in a local development environment used for testing)"

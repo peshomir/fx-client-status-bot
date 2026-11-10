@@ -9,5 +9,8 @@
 	},
 	"devDependencies": {
 		"wrangler": "^4.0.0"
+	},
+	"dependencies": {
+		"terser": "^5.51.2"
 	}
 }

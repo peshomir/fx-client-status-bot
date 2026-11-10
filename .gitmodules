@@ -1,0 +1,3 @@
+[submodule "FXclient"]
+	path = FXclient
+	url = https://github.com/fxclient/FXclient.git
